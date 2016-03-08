@@ -27,4 +27,12 @@ namespace ydd
 	else
 	    this->processSignal(CSocketFsm::sig_noerr);
     }
+
+    void CSocketFsm::q_MakeNonBlocking()
+    {
+	if(socket_.makeNonBlocking() != 0)
+	    this->processSignal(CSocketFsm::sig_err);
+	else
+	    this->processSignal(CSocketFsm::sig_noerr);
+    }
 }

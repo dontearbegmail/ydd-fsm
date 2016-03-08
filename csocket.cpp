@@ -1,6 +1,7 @@
 #include "csocket.h"
 #include "general.h"
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 using std::string;
 
@@ -63,4 +64,25 @@ namespace ydd
 	}
 	return 0;
     }
+
+    int CSocket::makeNonBlocking()
+    {
+	int flags, s;
+
+	flags = fcntl(this->sockfd_, F_GETFL, 0);
+	if (flags == -1) {
+	    msyslog(LOG_ERR, "make_socket_non_blocking: couldn't get flags for socket");
+	    return -1;
+	}
+
+	flags |= O_NONBLOCK;
+	s = fcntl(this->sockfd_, F_SETFL, flags);
+	if (s == -1) {
+	    msyslog(LOG_ERR, "make_socket_non_blocking: failed to set O_NONBLOCK");
+	    return -1;
+	}
+
+	return 0;
+    }
+
 }

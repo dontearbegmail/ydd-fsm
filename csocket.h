@@ -27,6 +27,7 @@ namespace ydd {
 	    int getAddrinfo();
 	    int getIpString(std::string& str);
 	    int getSockFd();
+	    int makeNonBlocking();
     };
 }
 
