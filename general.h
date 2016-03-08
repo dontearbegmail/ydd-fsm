@@ -1,5 +1,5 @@
 #ifndef GENERAL_H
-#define GENERAL_h
+#define GENERAL_H
 
 #include <errno.h>
 #include <syslog.h>
