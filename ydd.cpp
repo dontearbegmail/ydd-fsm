@@ -2,27 +2,59 @@
 #include "csocketfsm.h"
 #include <string>
 #include <iostream>
+#include <vector>
+
+using namespace ydd;
+using ydd::CSocketFsm;
+
+void f(CSocketFsm** p)
+{
+    if(p == NULL)
+	throw std::exception();
+    CSocketFsm::StateLine q_Resolve(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_Resolve[CSocketFsm::sig_noerr] = CSocketFsm::q_getSockFd;
+    q_Resolve[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+
+    CSocketFsm::StateLine q_GetSockFd(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_GetSockFd[CSocketFsm::sig_noerr] = CSocketFsm::q_makeNonBlocking;
+    q_GetSockFd[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+
+    CSocketFsm::StateLine q_MakeNonBlocking(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_MakeNonBlocking[CSocketFsm::sig_noerr] = CSocketFsm::q_epoll;
+    q_MakeNonBlocking[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+
+    CSocketFsm::StateTable t = {q_Resolve, q_GetSockFd, q_MakeNonBlocking};
+
+    *p = new CSocketFsm("lenta.ru", "80", false, -1, &t, true);
+
+    t[CSocketFsm::q_resolve][CSocketFsm::sig_noerr] = CSocketFsm::q_connect;
+    //int x = 0;
+    //int y = x + 1;
+}
 
 int main(int argc, char *argv[])
 {
-    using namespace ydd;
-    using ydd::CSocketFsm;
     openlog("ydd-client", LOG_PID, LOG_USER);
 
-    CSocketFsm::States table[3][CSocketFsm::NUM_SIGNALS] = {{CSocketFsm::q_none}};
+    CSocketFsm::StateLine q_Resolve(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_Resolve[CSocketFsm::sig_noerr] = CSocketFsm::q_getSockFd;
+    q_Resolve[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
-    table[CSocketFsm::q_getsockfd][CSocketFsm::sig_noerr] = CSocketFsm::q_make_non_blocking;
-    table[CSocketFsm::q_getsockfd][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    CSocketFsm::StateLine q_GetSockFd(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_GetSockFd[CSocketFsm::sig_noerr] = CSocketFsm::q_makeNonBlocking;
+    q_GetSockFd[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
+    CSocketFsm::StateLine q_MakeNonBlocking(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
+    q_MakeNonBlocking[CSocketFsm::sig_noerr] = CSocketFsm::q_epoll;
+    q_MakeNonBlocking[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
-    CSocket s("lenta.ru", "11437", false);
+    CSocketFsm::StateTable t = {q_Resolve, q_GetSockFd, q_MakeNonBlocking};
 
-    s.getAddrinfo();
-    std::string ip;
-    s.getIpString(ip);
-    std::cout << ip;
-
+    CSocketFsm sfsm("yandex.ru", "80", false, -1, &t, false);
+    //CSocketFsm* pfsm;
+    //f(&pfsm);
     closelog();
+
 
     return 0;
 }

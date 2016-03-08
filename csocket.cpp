@@ -7,9 +7,10 @@ using std::string;
 
 namespace ydd 
 {
-    CSocket::CSocket(const char* host, const char* port, bool isListening)
+    CSocket::CSocket(const char* host, const char* port, bool isListening, int epollfd)
     {
 	this->sockfd_ = -1;
+	this->epollfd_ = epollfd;
 	this->ai_ = NULL;
 	this->host_ = string(host);
 	this->port_ = string(port);

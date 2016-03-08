@@ -14,6 +14,7 @@ namespace ydd {
     {
 	private: 
 	    int sockfd_;
+	    int epollfd_;
 	    std::vector<std::string> dataChunks_;
 	    std::string host_;
 	    std::string port_;
@@ -22,7 +23,7 @@ namespace ydd {
 
 	    int close();
 	public:
-	    CSocket(const char* host, const char* port, bool isListening);
+	    CSocket(const char* host, const char* port, bool isListening, int epollfd);
 	    ~CSocket();
 	    int getAddrinfo();
 	    int getIpString(std::string& str);
