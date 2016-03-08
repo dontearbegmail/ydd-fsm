@@ -14,7 +14,7 @@ namespace ydd
 
     void CSocketFsm::q_Resolve()
     {
-	if(socket_.getAddrinfo() != 0)
+	if(this->socket_.getAddrinfo() != 0)
 	    this->processSignal(CSocketFsm::sig_err);
 	else 
 	    this->processSignal(CSocketFsm::sig_noerr);
@@ -22,7 +22,7 @@ namespace ydd
 
     void CSocketFsm::q_GetSockFd()
     {
-	if(socket_.getSockFd() != 0)
+	if(this->socket_.getSockFd() != 0)
 	    this->processSignal(CSocketFsm::sig_err);
 	else
 	    this->processSignal(CSocketFsm::sig_noerr);
@@ -30,9 +30,14 @@ namespace ydd
 
     void CSocketFsm::q_MakeNonBlocking()
     {
-	if(socket_.makeNonBlocking() != 0)
+	if(this->socket_.makeNonBlocking() != 0)
 	    this->processSignal(CSocketFsm::sig_err);
 	else
 	    this->processSignal(CSocketFsm::sig_noerr);
+    }
+
+    void CSocketFsm::q_Shutdown()
+    {
+	this->socket_.shutdown();
     }
 }

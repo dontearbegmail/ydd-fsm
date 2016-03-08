@@ -15,8 +15,9 @@ int main(int argc, char *argv[])
     table[CSocketFsm::q_getsockfd][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
 
-    CSocket s("yandex.ru", "11437", false);
+    CSocket s("lenta.ru", "11437", false);
 
+    s.getAddrinfo();
     std::string ip;
     s.getIpString(ip);
     std::cout << ip;

@@ -8,7 +8,6 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-
 namespace ydd {
 
     class CSocket 
@@ -21,6 +20,7 @@ namespace ydd {
 	    bool isListening_;
 	    addrinfo* ai_;
 
+	    int close();
 	public:
 	    CSocket(const char* host, const char* port, bool isListening);
 	    ~CSocket();
@@ -28,6 +28,7 @@ namespace ydd {
 	    int getIpString(std::string& str);
 	    int getSockFd();
 	    int makeNonBlocking();
+	    void shutdown();
     };
 }
 

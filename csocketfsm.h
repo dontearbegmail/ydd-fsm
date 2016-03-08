@@ -43,6 +43,7 @@ namespace ydd
 	    void q_Resolve();
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
+	    void q_Shutdown();
 
 	public:
 	    CSocketFsm(char const* host, char const* port, bool isListening);

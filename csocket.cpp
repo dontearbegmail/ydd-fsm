@@ -18,8 +18,7 @@ namespace ydd
 
     CSocket::~CSocket()
     {
-	if(this->ai_ != NULL)
-	    freeaddrinfo(this->ai_);
+	this->shutdown();
     }
 
     int CSocket::getAddrinfo()
@@ -46,6 +45,8 @@ namespace ydd
 
     int CSocket::getIpString(std::string& str)
     {
+	if(this->ai_ == NULL)
+	    return -1;
 	char buf[INET_ADDRSTRLEN];
 	sockaddr_in *sai = (sockaddr_in*) this->ai_->ai_addr;
 	inet_ntop(AF_INET, &(sai->sin_addr), buf, INET_ADDRSTRLEN);
@@ -85,4 +86,25 @@ namespace ydd
 	return 0;
     }
 
+    int CSocket::close()
+    {
+	int retval = -1;
+
+	if(this->sockfd_ != -1)
+	    retval = ::close(this->sockfd_);
+
+	if(retval == -1) {
+	    int e = errno;
+	    log_errno(e);
+	}
+	return retval;    
+    }
+
+    void CSocket::shutdown()
+    {
+	if(this->ai_ != NULL)
+	    freeaddrinfo(this->ai_);
+	if(this->sockfd_ != -1)
+	    this->close();
+    }
 }
