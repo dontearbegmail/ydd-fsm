@@ -2,15 +2,18 @@
 #include "general.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/epoll.h>
 
 using std::string;
 
 namespace ydd 
 {
-    CSocket::CSocket(const char* host, const char* port, bool isListening, int epollfd)
+    CSocket::CSocket(const char* host, const char* port, bool isListening, int epollfd, bool useEpollet)
     {
 	this->sockfd_ = -1;
 	this->epollfd_ = epollfd;
+	this->epollMode_ = CSocket::emNone;
+	this->useEpollet_ = useEpollet;
 	this->ai_ = NULL;
 	this->host_ = string(host);
 	this->port_ = string(port);
@@ -107,5 +110,87 @@ namespace ydd
 	    freeaddrinfo(this->ai_);
 	if(this->sockfd_ != -1)
 	    this->close();
+    }
+
+    int CSocket::setEpollMode(CSocket::EpollMode mode)
+    {
+	if(mode == this->epollMode_)
+	    return 0;
+
+	int e;
+	bool gotErr = false;
+	struct epoll_event event = {0};
+	event.data.fd = this->sockfd_;
+
+	if(mode == CSocket::emNone)
+	{
+	    e = epoll_ctl(this->epollfd_, EPOLL_CTL_DEL, this->sockfd_, &event);
+	    if(e == -1)
+	    {
+		e = errno;
+		gotErr = true;
+		log_errno(e);
+	    }
+	}
+	else 
+	{
+	    switch(mode)
+	    {
+		case CSocket::emEpollin:
+		    event.events = EPOLLIN;
+		    break;
+
+		case CSocket::emEpollout:
+		    event.events = EPOLLOUT;
+		    break;
+
+		case CSocket::emEpollinEpollout:
+		    event.events = EPOLLIN | EPOLLOUT;
+		    break;
+
+		default:
+		    break;
+	    }
+	    if(this->useEpollet_)
+		event.events |= EPOLLET;
+	    int op = this->epollMode_ == CSocket::emNone ? EPOLL_CTL_ADD : EPOLL_CTL_MOD;
+	    e = epoll_ctl(this->epollfd_, op, this->sockfd_, &event);
+	    if(e == -1)
+	    {
+		e = errno;
+		gotErr = true;
+		log_errno(e);
+	    }
+	}
+
+	if(gotErr)
+	    this->epollMode_ = CSocket::emNone;
+	else
+	    this->epollMode_ = mode;
+
+	return gotErr ? -1 : 0;
+    }
+
+    int CSocket::connect(bool& gotEInProgress)
+    {
+	bool gotError = false;
+	int e;
+	gotEInProgress = false;
+	e = ::connect(this->sockfd_, this->ai_->ai_addr, this->ai_->ai_addrlen);
+	if(e == -1) 
+	{
+	    e = errno;
+	    if(e == EINPROGRESS)
+	    {
+		gotEInProgress = true;
+	    }
+	    else 
+	    {
+		gotError = true;
+		log_errno(e);
+	    }
+	}
+
+	return gotError ? -1 : 0;
     }
 }
