@@ -193,4 +193,24 @@ namespace ydd
 
 	return gotError ? -1 : 0;
     }
+
+    int CSocket::getSoError(int& soError)
+    {
+	bool gotErr = false;
+	int optval, e;
+	size_t optlen = sizeof(optval);
+	e = getsockopt(this->sockfd_, SOL_SOCKET, SO_ERROR, &optval, &optlen);
+	if(e == -1)
+	{
+	    e = errno;
+	    log_errno(e);
+	    gotErr = true;
+	}
+	else
+	{
+	    soError = optval;
+	}
+	
+	return gotErr ? -1 : 0;
+    }
 }

@@ -36,6 +36,8 @@ namespace ydd {
 	    void shutdown();
 	    int setEpollMode(CSocket::EpollMode mode);
 	    int connect(bool& gotEInProgress);
+	    int getSoError(int& soError);
+
     };
 }
 

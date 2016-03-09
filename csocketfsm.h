@@ -60,6 +60,7 @@ namespace ydd
 	    void q_Shutdown();
 	    void q_ConnectPending();
 	    void q_Connect();
+	    void q_ConnectCheck();
 
 	public:
 	    CSocketFsm(char const* host, char const* port, bool isListening, int epollfd, 

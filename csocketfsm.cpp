@@ -91,4 +91,18 @@ namespace ydd
 		this->processSignal(CSocketFsm::sig_noerr);
 	}
     }
+
+    void CSocketFsm::q_ConnectCheck()
+    {
+	int soError;
+	if(this->socket_.getSoError(soError) == -1)
+	    this->processSignal(CSocketFsm::sig_err);
+	else
+	{
+	    if(soError == 0)
+		this->processSignal(CSocketFsm::sig_noerr);
+	    else
+		this->processSignal(CSocketFsm::sig_err);
+	}
+    }
 }
