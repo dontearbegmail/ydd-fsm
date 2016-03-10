@@ -96,7 +96,9 @@ namespace ydd
     {
 	int soError;
 	if(this->socket_.getSoError(soError) == -1)
+	{
 	    this->processSignal(CSocketFsm::sig_err);
+	}
 	else
 	{
 	    if(soError == 0)
