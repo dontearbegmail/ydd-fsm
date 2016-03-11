@@ -18,8 +18,10 @@ namespace ydd
 	this->epollfd_ = epollfd;
 	this->epollMode_ = CSocket::emNone;
 	this->useEpollet_ = useEpollet;
+	this->ai_addr_ = NULL;
 	if(copyAiAddr)
 	{
+	    this->ai_addr_ = new struct sockaddr;
 	    std::memcpy(this->ai_addr_, ai_addr, sizeof(struct sockaddr));
 	    this->needDeleteAiAddr_ = true;
 	}
@@ -35,7 +37,7 @@ namespace ydd
 	this->shutdown();
     }
 
-    addrinfo* CSocket::getAddrinfo(const char* host, const char* port)
+    int CSocket::getAddrinfo(const char* host, const char* port, struct sockaddr& ai_addr)
     {
 	if(host == NULL)
 	    throw std::invalid_argument("host is NULL");
@@ -47,12 +49,20 @@ namespace ydd
 	hints.ai_socktype = SOCK_STREAM;
 
 	int s = getaddrinfo(host, port, &hints, &result);
-	if (s != 0) {
+	if (s != 0) 
+	{
 	    msyslog(LOG_ERR, "getaddrinfo: %s\n", gai_strerror(s));
-	    result = NULL;
+	    return -1;
 	}
+	if(sizeof(ai_addr) != result->ai_addrlen)
+	{
+	    msyslog(LOG_ERR, "sizeof(ai_addr) != result->ai_addrlen");
+	    return -1;
+	}
+	std::memcpy(&ai_addr, result->ai_addr, result->ai_addrlen);
+	freeaddrinfo(result);
 
-	return result;
+	return 0;
     }
 
     int CSocket::getHostPortStrings(std::string& host, std::string& port)
@@ -67,13 +77,24 @@ namespace ydd
 	return 0;
     }
 
+    int CSocket::getIpString(struct sockaddr& ai_addr, std::string& s)
+    {
+	char inet_addrstr[INET_ADDRSTRLEN];
+	struct sockaddr_in* sai = (struct sockaddr_in *)&ai_addr; 
+	if(inet_ntop(AF_INET, &(sai->sin_addr), inet_addrstr, INET_ADDRSTRLEN) == NULL)
+	    return -1;
+	s.assign(inet_addrstr);
+	return 0;
+    }
+
     int CSocket::getSockFd()
     {
 	if(this->sockfd_ != -1)
 	    throw std::logic_error("Trying to getSockFd, but this->sockfd_ != -1");
 	int e;
 	this->sockfd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(this->sockfd_ == -1) {
+	if(this->sockfd_ == -1)
+       	{
 	    e = errno;
 	    log_errno(e);
 	    return -1;
@@ -117,10 +138,16 @@ namespace ydd
 
     void CSocket::shutdown()
     {
-	if(this->needDeleteAiAddr_)
+	if(this->needDeleteAiAddr_) 
+	{
 	    delete this->ai_addr_;
+	    this->ai_addr_ = NULL;
+	}
 	if(this->sockfd_ != -1)
+	{
 	    this->close();
+	    this->sockfd_ = -1;
+	}
     }
 
     int CSocket::setEpollMode(CSocket::EpollMode mode)
@@ -225,6 +252,30 @@ namespace ydd
 	return gotErr ? -1 : 0;
     }
 
+    int CSocket::bind()
+    {
+	int e = ::bind(this->sockfd_, this->ai_addr_, sizeof(this->ai_addr_));
+	if(e != 0)
+	{
+	    e = errno;
+	    log_errno(e);
+	    return -1;
+	}
+	return 0;
+    }
+
+    int CSocket::setListening()
+    {
+	int e = ::listen(this->sockfd_, 1); // TODO: change 1 to the corresponding constant
+	if(e == -1)
+	{
+	    e = errno;
+	    log_errno(e);
+	    return -1;
+	}
+	return 0;
+    }
+
     int CSocket::accept(struct sockaddr& in_addr)
     {
 	socklen_t in_len;
@@ -245,5 +296,15 @@ namespace ydd
 	    }
 	}
 	return infd;
+    }
+
+    int CSocket::getEpollFd()
+    {
+	return this->epollfd_;
+    }
+
+    bool CSocket::getUseEpollet()
+    {
+	return this->useEpollet_;
     }
 }

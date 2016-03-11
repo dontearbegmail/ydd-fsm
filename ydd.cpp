@@ -1,63 +1,86 @@
 #include "general.h"
 #include "csocketfsm.h"
+#include "cserversocketfsm.h"
 #include <string>
 #include <iostream>
 #include <vector>
 
 using namespace ydd;
+using namespace std;
 using ydd::CSocketFsm;
+using ydd::CServerSocketFsm;
 
-void f(CSocketFsm** p)
+namespace ydd
 {
-    if(p == NULL)
-	throw std::exception();
-    /*CSocketFsm::StateLine q_Resolve(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
-    q_Resolve[CSocketFsm::sig_noerr] = CSocketFsm::q_getSockFd;
-    q_Resolve[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
-    CSocketFsm::StateLine q_GetSockFd(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
-    q_GetSockFd[CSocketFsm::sig_noerr] = CSocketFsm::q_makeNonBlocking;
-    q_GetSockFd[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    class A {
+	public:
+	static const int s = 1;
+	virtual int getS();
+	A();
+    };
 
-    CSocketFsm::StateLine q_MakeNonBlocking(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
-    q_MakeNonBlocking[CSocketFsm::sig_noerr] = CSocketFsm::q_epoll;
-    q_MakeNonBlocking[CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    int A::getS()
+    {
+	return A::s;
+    }
+    A::A()
+    {
+	cout << "A->getS() " << this->getS() << endl;
+    }
 
-    CSocketFsm::StateTable t = {q_Resolve, q_GetSockFd, q_MakeNonBlocking};
+    class B : public A 
+    {
+	public:
+	    static const int s = 3;
+	virtual int getS()
+	{
+	    return B::s;
+	}
+	B()
+	{
+	    cout << "B->getS() " << this->getS() << endl;
+	}
+    };
 
-    *p = new CSocketFsm("lenta.ru", "80", false, -1, &t, true);
-
-    t[CSocketFsm::q_resolve][CSocketFsm::sig_noerr] = CSocketFsm::q_connect;*/
-    //int x = 0;
-    //int y = x + 1;
 }
 
 int main(int argc, char *argv[])
 {
     openlog("ydd-client", LOG_PID, LOG_USER);
 
-    CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
-    CSocketFsm::StateTable t(CSocketFsm::NUM_STATES, e);
+    CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerSocketFsm::q_none);
+    CSocketFsm::StateTable t(CServerSocketFsm::NUM_STATES, e);
 
-    t[CSocketFsm::q_getSockFd][CSocketFsm::sig_noerr] = CSocketFsm::q_makeNonBlocking;
-    t[CSocketFsm::q_getSockFd][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    t[CServerSocketFsm::q_getSockFd][CSocketFsm::sig_noerr] = CServerSocketFsm::q_bind;
+    t[CServerSocketFsm::q_getSockFd][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
-    t[CSocketFsm::q_makeNonBlocking][CSocketFsm::sig_noerr] = CSocketFsm::q_connect;
-    t[CSocketFsm::q_makeNonBlocking][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    t[CServerSocketFsm::q_bind][CSocketFsm::sig_noerr] = CServerSocketFsm::q_makeNonBlocking;
+    t[CServerSocketFsm::q_bind][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
-    t[CSocketFsm::q_connect][CSocketFsm::sig_einprogress] = CSocketFsm::q_connectPending;
-    t[CSocketFsm::q_connect][CSocketFsm::sig_noerr] = CSocketFsm::q_sslWrite;
-    t[CSocketFsm::q_connect][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    t[CServerSocketFsm::q_makeNonBlocking][CSocketFsm::sig_noerr] = CServerSocketFsm::q_setListening;
+    t[CServerSocketFsm::q_makeNonBlocking][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
-    t[CSocketFsm::q_connectPending][CSocketFsm::sig_epollout] = CSocketFsm::q_connectCheck;
-    t[CSocketFsm::q_connectPending][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    t[CServerSocketFsm::q_setListening][CSocketFsm::sig_noerr] = CServerSocketFsm::q_waitIncomings;
+    t[CServerSocketFsm::q_setListening][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
-    t[CSocketFsm::q_connectCheck][CSocketFsm::sig_noerr] = CSocketFsm::q_sslWrite;
-    t[CSocketFsm::q_connectCheck][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
+    t[CServerSocketFsm::q_waitIncomings][CSocketFsm::sig_epollin] = CServerSocketFsm::q_processIncomings;
+    t[CServerSocketFsm::q_waitIncomings][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
-    //CSocketFsm sfsm("yandex.ru", "80", false, -1, true, &t, false);
-    //CSocketFsm* pfsm;
-    //f(&pfsm);
+    t[CServerSocketFsm::q_processIncomings][CSocketFsm::sig_noerr] = CServerSocketFsm::q_waitIncomings;
+    t[CServerSocketFsm::q_processIncomings][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
+
+    struct sockaddr ai_addr;
+    if(CSocket::getAddrinfo("192.168.1.84", "80", ai_addr) != 0)
+	return -1;
+
+    CServerSocketFsm sfsm(&ai_addr, true, -1, -1, true, &t, true);
+    
+    std::string s;
+    CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
+
+    cout << s << endl;
+    
     closelog();
 
 

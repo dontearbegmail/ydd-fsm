@@ -10,27 +10,9 @@ namespace ydd
     class CSocketFsm 
     {
 	public:
-	    enum States 
-	    {
-		q_none,
-		q_getSockFd,
-		q_makeNonBlocking,
-		q_connect,
-		q_connectPending,
-		q_connectCheck,
-		q_read,
-		q_readEpollinPending,
-		q_write,
-		q_writeEpolloutPending,
-		q_sslWrite,
-		q_sslWriteWantRead,
-		q_sslWriteWantWrite,
-		q_sslRead,
-		q_sslReadWantWrite,
-		q_sslReadWantRead,
-		q_shutdown
-	    };
-	    const static size_t NUM_STATES = 18;
+	    typedef short StateType;
+	    static const StateType q_none = 0, q_shutdown = 1;
+	    static const size_t NUM_STATES = 0;
 
 	    enum Signals
 	    {
@@ -43,16 +25,16 @@ namespace ydd
 	    };
 	    const static size_t NUM_SIGNALS = 6;
 
-	    typedef std::vector<CSocketFsm::States> StateLine;
-	    typedef std::vector<StateLine> StateTable;
+	    typedef std::vector<StateType> StateLine;
+	    typedef std::vector<CSocketFsm::StateLine> StateTable;
 
 	    void processSignal(CSocketFsm::Signals signal);
 
-	private:
 	    CSocket socket_;
+	protected:
 	    CSocketFsm::StateTable* table_;
 	    bool needDeleteTable_;
-	    CSocketFsm::States state_;
+	    StateType state_;
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
 	    void q_Shutdown();
@@ -64,6 +46,7 @@ namespace ydd
 	    CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
+	    StateType getState();
     };
 }
 

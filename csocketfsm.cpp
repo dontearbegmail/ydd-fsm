@@ -3,6 +3,8 @@
 
 namespace ydd 
 {
+    /*const CSocketFsm::StateType CSocketFsm::q_none = 0;
+    const CSocketFsm::StateType CSocketFsm::q_shutdown = 1;*/
 
     CSocketFsm::CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
 	    int epollfd, bool useEpollet, StateTable* table, bool copyTable) 
@@ -10,8 +12,6 @@ namespace ydd
     {
 	if(table == NULL)
 	    throw std::invalid_argument("table is NULL");
-	if(table->size() != CSocketFsm::NUM_STATES)
-	    throw std::invalid_argument("table.size() != CSocketFsm::NUM_STATES");
 	CSocketFsm::StateTable::const_iterator i;
 	bool isSizeCorrect = true;
 	for(i = table->begin(); (i != table->end()) && (isSizeCorrect); i++)
