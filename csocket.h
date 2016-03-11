@@ -19,25 +19,22 @@ namespace ydd {
 	    int epollfd_;
 	    CSocket::EpollMode epollMode_;
 	    bool useEpollet_;
-	    std::vector<std::string> dataChunks_;
-	    std::string host_;
-	    std::string port_;
-	    bool isListening_;
-	    addrinfo* ai_;
+	    struct sockaddr* ai_addr_;
+	    bool needDeleteAiAddr_;
 
 	    int close();
 	public:
-	    CSocket(const char* host, const char* port, bool isListening, int epollfd, bool useEpollet);
+	    CSocket(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, int epollfd, bool useEpollet);
 	    ~CSocket();
-	    int getAddrinfo();
-	    int getIpString(std::string& str);
+	    static addrinfo* getAddrinfo(const char* host, const char* port);
+	    int getHostPortStrings(std::string& host, std::string& port);
 	    int getSockFd();
 	    int makeNonBlocking();
 	    void shutdown();
 	    int setEpollMode(CSocket::EpollMode mode);
 	    int connect(bool& gotEInProgress);
 	    int getSoError(int& soError);
-
+	    int accept(struct sockaddr& in_addr);
     };
 }
 

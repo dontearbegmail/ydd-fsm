@@ -3,21 +3,31 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <sys/epoll.h>
+#include <stdexcept>
+#include <cstring>
 
 using std::string;
 
 namespace ydd 
 {
-    CSocket::CSocket(const char* host, const char* port, bool isListening, int epollfd, bool useEpollet)
+    CSocket::CSocket(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, int epollfd, bool useEpollet)
     {
-	this->sockfd_ = -1;
+	if(ai_addr == NULL)
+	    throw std::invalid_argument("ai_addr is NULL");
+	this->sockfd_ = sockfd;
 	this->epollfd_ = epollfd;
 	this->epollMode_ = CSocket::emNone;
 	this->useEpollet_ = useEpollet;
-	this->ai_ = NULL;
-	this->host_ = string(host);
-	this->port_ = string(port);
-	this->isListening_ = isListening;
+	if(copyAiAddr)
+	{
+	    std::memcpy(this->ai_addr_, ai_addr, sizeof(struct sockaddr));
+	    this->needDeleteAiAddr_ = true;
+	}
+	else
+	{
+	    this->ai_addr_ = ai_addr;
+	    this->needDeleteAiAddr_ = false;
+	}
     }
 
     CSocket::~CSocket()
@@ -25,43 +35,44 @@ namespace ydd
 	this->shutdown();
     }
 
-    int CSocket::getAddrinfo()
+    addrinfo* CSocket::getAddrinfo(const char* host, const char* port)
     {
-	struct addrinfo hints = {}, *result;
-	int retval = -1;
+	if(host == NULL)
+	    throw std::invalid_argument("host is NULL");
+	if(port == NULL)
+	    throw std::invalid_argument("port is NULL");
+	struct addrinfo hints = {}, *result = NULL;
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if(this->isListening_)
-	    hints.ai_flags = AI_PASSIVE;
 
-	int s = getaddrinfo(this->host_.c_str(), this->port_.c_str(), &hints, &result);
+	int s = getaddrinfo(host, port, &hints, &result);
 	if (s != 0) {
 	    msyslog(LOG_ERR, "getaddrinfo: %s\n", gai_strerror(s));
-	}
-	else {
-	    this->ai_ = result;
-	    retval = 0;
+	    result = NULL;
 	}
 
-	return retval;
+	return result;
     }
 
-    int CSocket::getIpString(std::string& str)
+    int CSocket::getHostPortStrings(std::string& host, std::string& port)
     {
-	if(this->ai_ == NULL)
+	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
+	socklen_t ai_len = sizeof(this->ai_addr_);
+	int e = getnameinfo(this->ai_addr_, ai_len, hbuf, NI_MAXHOST, sbuf, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+	if(e != 0)
 	    return -1;
-	char buf[INET_ADDRSTRLEN];
-	sockaddr_in *sai = (sockaddr_in*) this->ai_->ai_addr;
-	inet_ntop(AF_INET, &(sai->sin_addr), buf, INET_ADDRSTRLEN);
-	str = buf;
+	host.assign(hbuf);
+	port.assign(sbuf);
 	return 0;
     }
 
     int CSocket::getSockFd()
     {
+	if(this->sockfd_ != -1)
+	    throw std::logic_error("Trying to getSockFd, but this->sockfd_ != -1");
 	int e;
-	this->sockfd_ = socket(this->ai_->ai_family, this->ai_->ai_socktype, this->ai_->ai_protocol);
+	this->sockfd_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(this->sockfd_ == -1) {
 	    e = errno;
 	    log_errno(e);
@@ -106,8 +117,8 @@ namespace ydd
 
     void CSocket::shutdown()
     {
-	if(this->ai_ != NULL)
-	    freeaddrinfo(this->ai_);
+	if(this->needDeleteAiAddr_)
+	    delete this->ai_addr_;
 	if(this->sockfd_ != -1)
 	    this->close();
     }
@@ -176,7 +187,7 @@ namespace ydd
 	bool gotError = false;
 	int e;
 	gotEInProgress = false;
-	e = ::connect(this->sockfd_, this->ai_->ai_addr, this->ai_->ai_addrlen);
+	e = ::connect(this->sockfd_, this->ai_addr_, sizeof(this->ai_addr_));
 	if(e == -1) 
 	{
 	    e = errno;
@@ -212,5 +223,27 @@ namespace ydd
 	}
 	
 	return gotErr ? -1 : 0;
+    }
+
+    int CSocket::accept(struct sockaddr& in_addr)
+    {
+	socklen_t in_len;
+	int infd;
+	int e;
+
+	in_len = sizeof(in_addr);
+	infd = ::accept(this->sockfd_, &in_addr, &in_len);
+	if (infd == -1) {
+	    e = errno;
+	    if ((e == EAGAIN) || (e == EWOULDBLOCK)) {
+		/* We have processed all incoming connections. */
+		return 0;
+	    }
+	    else {
+		log_errno(e);
+		return -1;
+	    }
+	}
+	return infd;
     }
 }

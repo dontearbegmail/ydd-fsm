@@ -4,9 +4,9 @@
 namespace ydd 
 {
 
-    CSocketFsm::CSocketFsm(char const* host, char const * port, bool isListening, 
+    CSocketFsm::CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
 	    int epollfd, bool useEpollet, StateTable* table, bool copyTable) 
-	: socket_(host, port, isListening, epollfd, useEpollet)
+	: socket_(ai_addr, copyAiAddr, sockfd, epollfd, useEpollet)
     {
 	if(table == NULL)
 	    throw std::invalid_argument("table is NULL");
@@ -39,14 +39,6 @@ namespace ydd
 
     void CSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
-    }
-
-    void CSocketFsm::q_Resolve()
-    {
-	if(this->socket_.getAddrinfo() != 0)
-	    this->processSignal(CSocketFsm::sig_err);
-	else 
-	    this->processSignal(CSocketFsm::sig_noerr);
     }
 
     void CSocketFsm::q_GetSockFd()

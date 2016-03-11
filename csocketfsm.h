@@ -13,7 +13,6 @@ namespace ydd
 	    enum States 
 	    {
 		q_none,
-		q_resolve,
 		q_getSockFd,
 		q_makeNonBlocking,
 		q_connect,
@@ -54,7 +53,6 @@ namespace ydd
 	    CSocketFsm::StateTable* table_;
 	    bool needDeleteTable_;
 	    CSocketFsm::States state_;
-	    void q_Resolve();
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
 	    void q_Shutdown();
@@ -63,8 +61,8 @@ namespace ydd
 	    void q_ConnectCheck();
 
 	public:
-	    CSocketFsm(char const* host, char const* port, bool isListening, int epollfd, 
-		    bool useEpollet, StateTable* table, bool copyTable);
+	    CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
+		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
     };
 }

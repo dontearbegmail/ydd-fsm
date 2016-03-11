@@ -39,9 +39,6 @@ int main(int argc, char *argv[])
     CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CSocketFsm::q_none);
     CSocketFsm::StateTable t(CSocketFsm::NUM_STATES, e);
 
-    t[CSocketFsm::q_resolve][CSocketFsm::sig_noerr] = CSocketFsm::q_getSockFd;
-    t[CSocketFsm::q_resolve][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
-
     t[CSocketFsm::q_getSockFd][CSocketFsm::sig_noerr] = CSocketFsm::q_makeNonBlocking;
     t[CSocketFsm::q_getSockFd][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
@@ -58,7 +55,7 @@ int main(int argc, char *argv[])
     t[CSocketFsm::q_connectCheck][CSocketFsm::sig_noerr] = CSocketFsm::q_sslWrite;
     t[CSocketFsm::q_connectCheck][CSocketFsm::sig_err] = CSocketFsm::q_shutdown;
 
-    CSocketFsm sfsm("yandex.ru", "80", false, -1, true, &t, false);
+    //CSocketFsm sfsm("yandex.ru", "80", false, -1, true, &t, false);
     //CSocketFsm* pfsm;
     //f(&pfsm);
     closelog();
