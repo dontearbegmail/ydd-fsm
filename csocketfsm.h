@@ -28,25 +28,33 @@ namespace ydd
 	    typedef std::vector<StateType> StateLine;
 	    typedef std::vector<CSocketFsm::StateLine> StateTable;
 
-	    void processSignal(CSocketFsm::Signals signal);
 
-	    CSocket socket_;
 	protected:
+	    CSocket socket_;
 	    CSocketFsm::StateTable* table_;
 	    bool needDeleteTable_;
+
 	    StateType state_;
+
+	    CSocketFsm::Signals selfSignal_;
+	    bool setSelfSignal_;
+	    void setSelfSignal(CSocketFsm::Signals signal);
+	    
+	    typedef void (*StateCallback)();
+	    std::vector<StateCallback>* statesCallbacks_;
+	    CSocketFsm::StateCallback getCallback(CSocketFsm::StateType state);
+	    bool getNewState(CSocketFsm::Signals signal, CSocketFsm::StateType& newState);
+
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
 	    void q_Shutdown();
-	    void q_ConnectPending();
-	    void q_Connect();
-	    void q_ConnectCheck();
 
 	public:
 	    CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
 	    StateType getState();
+	    void processSignal(CSocketFsm::Signals signal);
     };
 }
 

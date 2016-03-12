@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     CServerSocketFsm sfsm(&ai_addr, true, -1, -1, true, &t, true);
     
     std::string s;
-    CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
+    //CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
 
     cout << s << endl;
     

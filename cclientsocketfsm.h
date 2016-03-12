@@ -36,6 +36,9 @@ namespace ydd
 
 	    CClientSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
+	    void q_ConnectPending();
+	    void q_Connect();
+	    void q_ConnectCheck();
     };
 }
 

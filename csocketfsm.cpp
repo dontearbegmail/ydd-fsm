@@ -29,6 +29,9 @@ namespace ydd
 	    this->needDeleteTable_ = false;
 	    this->table_ = table;
 	}
+	this->selfSignal_ = CSocketFsm::sig_empty;
+	this->setSelfSignal_ = false;
+	this->statesCallbacks_ = NULL;
     }
 
     CSocketFsm::~CSocketFsm()
@@ -37,66 +40,90 @@ namespace ydd
 	    delete this->table_;
     }
 
+    CSocketFsm::StateCallback CSocketFsm::getCallback(CSocketFsm::StateType state)
+    {
+	CSocketFsm::StateCallback sig_callback = NULL;
+	if(this->statesCallbacks_ == NULL)
+	    throw std::logic_error("statesCallbacks_ table is NULL");
+	try 
+	{
+	    sig_callback = this->statesCallbacks_->at(state);
+	}
+	catch(std::out_of_range& oor)
+	{
+	    msyslog(LOG_ERR, "The state #%d is out of range of this->statesCallbacks_ (size = %d)", 
+		    state, this->statesCallbacks_->size());
+	}
+	return sig_callback;
+    }
+	    
+    bool CSocketFsm::getNewState(CSocketFsm::Signals signal, CSocketFsm::StateType& newState)
+    {
+	try
+	{
+	    newState = this->table_->at(this->state_).at(signal);
+	}
+	catch(std::out_of_range& oor)
+	{
+	    msyslog(LOG_ERR, "Got out of range exception while trying to access "
+		    "this->table_[curr state = %d][signal = %d]", this->state_, signal);
+	    return false;
+	}
+	return true;
+    }
+
     void CSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
+	CSocketFsm::StateType newState;
+	CSocketFsm::StateCallback scb = NULL;
+	bool newOk; 
+	CSocketFsm::Signals sig = signal;
+
+	// do input var "signal" processing here
+	do
+	{
+	    this->setSelfSignal_ = false;
+	    newOk = this->getNewState(sig, newState);
+	    if(!newOk)
+	    {
+		msyslog(LOG_ERR, "Failed to get the new state. See log above. The state remains unchanged.");
+		return;
+	    }
+	    this->state_ = newState;
+	    scb = this->getCallback(newState);
+	    if(scb == NULL)
+		msyslog(LOG_WARNING, "Got NULL as the callback function for the new state %d", newState);
+	    else
+		(*scb)();
+	    if(this->setSelfSignal_)
+		sig = this->selfSignal_;
+	} while(this->setSelfSignal_);
+    }
+
+    void CSocketFsm::setSelfSignal(CSocketFsm::Signals signal)
+    {
+	this->setSelfSignal_ = true;
+	this->selfSignal_ = signal;
     }
 
     void CSocketFsm::q_GetSockFd()
     {
 	if(this->socket_.getSockFd() != 0)
-	    this->processSignal(CSocketFsm::sig_err);
+	    this->setSelfSignal(CSocketFsm::sig_err);
 	else
-	    this->processSignal(CSocketFsm::sig_noerr);
+	    this->setSelfSignal(CSocketFsm::sig_noerr);
     }
 
     void CSocketFsm::q_MakeNonBlocking()
     {
 	if(this->socket_.makeNonBlocking() != 0)
-	    this->processSignal(CSocketFsm::sig_err);
+	    this->setSelfSignal(CSocketFsm::sig_err);
 	else
-	    this->processSignal(CSocketFsm::sig_noerr);
+	    this->setSelfSignal(CSocketFsm::sig_noerr);
     }
 
     void CSocketFsm::q_Shutdown()
     {
 	this->socket_.shutdown();
-    }
-
-    void CSocketFsm::q_ConnectPending()
-    {
-	if(this->socket_.setEpollMode(CSocket::emEpollout) != 0)
-	    this->processSignal(CSocketFsm::sig_err);
-    }
-
-    void CSocketFsm::q_Connect()
-    {
-	bool gotEInProgress = false;
-	if(this->socket_.connect(gotEInProgress) == -1)
-	{
-	    this->processSignal(CSocketFsm::sig_err);
-	}
-	else
-	{
-	    if(gotEInProgress)
-		this->processSignal(CSocketFsm::sig_einprogress);
-	    else
-		this->processSignal(CSocketFsm::sig_noerr);
-	}
-    }
-
-    void CSocketFsm::q_ConnectCheck()
-    {
-	int soError;
-	if(this->socket_.getSoError(soError) == -1)
-	{
-	    this->processSignal(CSocketFsm::sig_err);
-	}
-	else
-	{
-	    if(soError == 0)
-		this->processSignal(CSocketFsm::sig_noerr);
-	    else
-		this->processSignal(CSocketFsm::sig_err);
-	}
     }
 }
