@@ -58,70 +58,47 @@ namespace ydd
 	msyslog(LOG_DEBUG, "Starting to process incoming connections");
 	int infd;
 	struct sockaddr in_addr;
-	while(1)
+	bool gotMore = true;
+	bool noErrors = true;
+	while(gotMore && noErrors)
 	{
 	    infd = this->socket_.accept(in_addr);
 	    if(infd == 0) {
 		msyslog(LOG_DEBUG, "Processed all incoming connections");
-		break;
+		gotMore = false;
 	    }
 	    else if(infd == -1) {
-		msyslog(LOG_ERR, "Failed to accept an incoming connection. "
+		msyslog(LOG_ERR, "Got an error while processing an incoming connection. "
 			"Will stop processing incoming connections, some of them may be lost. "
 			"See log above for details");
-		break;
+		noErrors = false;
 	    }
 	    else {
-		CClientSocketFsm newclient(&in_addr, true, infd, this->socket_.getEpollFd(), 
-			this->socket_.getUseEpollet(), NULL, false);
+		// FIXME: create clients states table and replace NULL with it
+		CClientSocketFsm* newclient = new CClientSocketFsm(&in_addr, true, infd, 
+			this->socket_.getEpollFd(), this->socket_.getUseEpollet(), NULL, false);
+		std::pair<ClientsMap::iterator, bool> ret;
+		ret = this->clients_.insert(std::pair<int, CClientSocketFsm*>(infd, newclient));
+		if(ret.second == false)
+		{
+		    msyslog(LOG_DEBUG, "A newly accepted connection sockfd = %d is already present "
+			    "in this->clients_. Will delete existing CClientSocketFsm data for it "
+			    "and create new one", infd);
+		    if(ret.first->second != NULL)
+			delete ret.first->second;
+		    ret.first->second = newclient;
+		}
 		// FIXME newclient.processSignal(sig_empty);
+		msyslog(LOG_DEBUG, "Successfully added incoming sockfd %d into this->clients_ "
+			"storage", infd);
 	    }
 	}
-	/*
-    while(1) {
-	int infd = accept_and_epoll(sockfd, efd, EPOLLET);
-	if(infd == 0) {
-	    msyslog(LOG_DEBUG, "Processed all incoming connections");
-	    break;
-	}
-	else if(infd == -1) {
-	    msyslog(LOG_ERR, "Failed to accept or epoll-queue an incoming connection. "
-		    "Will stop processing incoming connections, some of them may be lost. "
-		    "See log above for details");
-	    break;
-	}
-	else {
-	    msyslog(LOG_DEBUG, "Successfully accepted an incoming connection on socket %d " 
-		    "and added it to epoll queue. See log above for details", infd);
-	    int r = sfd_sd_add(sfd_sd, infd, NULL, 0, NULL);
-	    if(r != 0) { */
-		/* The saddest possible case: we're adding a new incoming connection socket file descriptor to our
-		 * SFD-DCL storage, but it's value is already present there. How could it happen? The only explanation
-		 * that comes into mind: we added this infd earlier, but the connection was closed, and we didn't
-		 * notice that. So we have to clean DCL for that infd */
-		/*if(r == 1) {
-		    msyslog(LOG_WARNING, "sfd_sd returned 1 when adding a new incoming connection "
-			    "with socketfd = %d. Will empty the existing DCL", infd);
-		    sfd_sd_empty_sd(sfd_sd, infd);
-		}
-		else if(r == -1) {
-		    msyslog(LOG_WARNING, "SFD-DCL storage limit reached while trying to add an incoming connection "
-			    "with socketfd = %d. Will close the connection. TODO: add SFD-DCL storage cleaner", infd);
-		    close(infd);*/ /* epoll removes infd automatically from its' watchlist */
-		/*}
-		else if(r == -2) {*/
-		    /* Iput data error?? (i.e. sfd_sd == NULL) This should never happen, but still... */
-		    /*msyslog(LOG_WARNING, "Lucky me! sfd_sd_add returned -2 which means input data error. "
-			    "Don't know what to do, so I'll continue hoping for the best and I'll pray for you :))");
-		}
-	    }
-	    else {
-		msyslog(LOG_DEBUG, "Successfully added the socketfd %d for the incoming connection "
-			"to SFD-DCL storage.", infd);
-	    }
-	}
-    }*/
+	if(!noErrors)
+	    this->setSelfSignal(sig_err);
+	else
+	    this->setSelfSignal(sig_noerr);
     }
+
     CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()
     {
 	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks table(
