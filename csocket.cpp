@@ -68,10 +68,13 @@ namespace ydd
     int CSocket::getHostPortStrings(std::string& host, std::string& port)
     {
 	char hbuf[NI_MAXHOST], sbuf[NI_MAXSERV];
-	socklen_t ai_len = sizeof(this->ai_addr_);
+	socklen_t ai_len = sizeof(*this->ai_addr_);
 	int e = getnameinfo(this->ai_addr_, ai_len, hbuf, NI_MAXHOST, sbuf, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
 	if(e != 0)
+	{
+	    msyslog(LOG_ERR, "getnameinfo: %s\n", gai_strerror(e));
 	    return -1;
+	}
 	host.assign(hbuf);
 	port.assign(sbuf);
 	return 0;
@@ -214,7 +217,7 @@ namespace ydd
 	bool gotError = false;
 	int e;
 	gotEInProgress = false;
-	e = ::connect(this->sockfd_, this->ai_addr_, sizeof(this->ai_addr_));
+	e = ::connect(this->sockfd_, this->ai_addr_, sizeof(*this->ai_addr_));
 	if(e == -1) 
 	{
 	    e = errno;
@@ -254,7 +257,7 @@ namespace ydd
 
     int CSocket::bind()
     {
-	int e = ::bind(this->sockfd_, this->ai_addr_, sizeof(this->ai_addr_));
+	int e = ::bind(this->sockfd_, this->ai_addr_, sizeof(*this->ai_addr_));
 	if(e != 0)
 	{
 	    e = errno;

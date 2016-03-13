@@ -52,9 +52,8 @@ namespace ydd
 	    typedef std::vector<StateType> StateLine;
 	    typedef std::vector<CSocketFsm::StateLine> StateTable;
 
-
-	protected:
 	    CSocket socket_;
+	protected:
 	    CSocketFsm::StateTable* table_;
 	    bool needDeleteTable_;
 

@@ -3,7 +3,7 @@
 
 namespace ydd
 {
-    const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks 
+    CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks 
 	CServerSocketFsm::statesCallbacks_ = CServerSocketFsm::getStatesCallbacksT();
 
     CServerSocketFsm::CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
@@ -17,7 +17,7 @@ namespace ydd
     void CServerSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
 	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks t;
-	this->processSignalT<CServerSocketFsm>(this, t, signal);
+	this->processSignalT<CServerSocketFsm>(this, CServerSocketFsm::statesCallbacks_, signal);
     }
 
     void CServerSocketFsm::q_Bind()

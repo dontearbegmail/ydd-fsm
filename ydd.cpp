@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
     CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerSocketFsm::q_none);
     CSocketFsm::StateTable t(CServerSocketFsm::NUM_STATES, e);
 
+    t[CServerSocketFsm::q_none][CSocketFsm::sig_empty] = CServerSocketFsm::q_getSockFd;
+
     t[CServerSocketFsm::q_getSockFd][CSocketFsm::sig_noerr] = CServerSocketFsm::q_bind;
     t[CServerSocketFsm::q_getSockFd][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
@@ -95,15 +97,17 @@ int main(int argc, char *argv[])
     t[CServerSocketFsm::q_processIncomings][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
     struct sockaddr ai_addr;
-    if(CSocket::getAddrinfo("192.168.1.84", "80", ai_addr) != 0)
+    if(CSocket::getAddrinfo("localhost", "11437", ai_addr) != 0)
 	return -1;
 
+    std::string s, p;
     CServerSocketFsm sfsm(&ai_addr, true, -1, -1, true, &t, true);
-    
-    std::string s;
-    //CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
-
+    CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
     cout << s << endl;
+    sfsm.socket_.getHostPortStrings(s, p);
+    cout << s << ":" << p << endl;
+
+    sfsm.processSignal(CSocketFsm::sig_empty);
 
     closelog();
 

@@ -26,12 +26,12 @@ namespace ydd
 
 	    CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
+	    void processSignal(CSocketFsm::Signals signal);
 	private:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
-	    static const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
+	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
 	    std::vector<CClientSocketFsm> clients_;
 
-	    void processSignal(CSocketFsm::Signals signal);
 
 	    void q_Bind();
 	    void q_SetListening();
