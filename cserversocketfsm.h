@@ -28,8 +28,9 @@ namespace ydd
 
 	    CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
+	    static const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
 	private:
-	    //static CSocketFsm::StatesCallbacks getStatesCallbacksT();
+	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
 
 	    void q_Bind();
 	    void q_SetListening();

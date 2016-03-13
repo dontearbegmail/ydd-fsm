@@ -3,6 +3,9 @@
 
 namespace ydd
 {
+    const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks 
+	CServerSocketFsm::statesCallbacks_ = CServerSocketFsm::getStatesCallbacksT();
+
     CServerSocketFsm::CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
 	    int epollfd, bool useEpollet, StateTable* table, bool copyTable)
 	: CSocketFsm(ai_addr, copyAiAddr, sockfd, epollfd, useEpollet, table, copyTable)
@@ -101,6 +104,20 @@ namespace ydd
 	    }
 	}
     }*/
+    }
+    CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()
+    {
+	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks table(
+		CServerSocketFsm::NUM_STATES, NULL);
+	table[q_shutdown] = &CServerSocketFsm::q_Shutdown;
+	table[q_getSockFd] = &CServerSocketFsm::q_GetSockFd;
+	table[q_bind] = &CServerSocketFsm::q_Bind;
+	table[q_makeNonBlocking] = &CServerSocketFsm::q_MakeNonBlocking;
+	table[q_setListening] = &CServerSocketFsm::q_SetListening;
+	table[q_waitIncomings] = &CServerSocketFsm::q_WaitIncomings;
+	table[q_processIncomings] = &CServerSocketFsm::q_ProcessIncomings;
+
+	return table;
     }
 
     /*CSocketFsm::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()

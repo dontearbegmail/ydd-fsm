@@ -80,7 +80,10 @@ namespace ydd
 	    ~CSocketFsm();
 	    StateType getState();
 	    void processSignal(CSocketFsm::Signals signal);
-	    //template<class TFSM> void processSignalT(CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& );
+	    template<class TFSM> void processSignalT(
+		    TFSM tfsm,
+		    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,
+		    CSocketFsm::Signals signal);
     };
 }
 
