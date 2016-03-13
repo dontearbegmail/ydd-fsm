@@ -97,25 +97,18 @@ int main(int argc, char *argv[])
     t[CServerSocketFsm::q_processIncomings][CSocketFsm::sig_err] = CServerSocketFsm::q_shutdown;
 
     struct sockaddr ai_addr;
-    if(CSocket::getAddrinfo("localhost", "11437", ai_addr) != 0)
+    if(CSocket::getAddrinfo("192.168.1.84", "11437", ai_addr) != 0)
 	return -1;
 
-    std::string s, p;
     CServerSocketFsm sfsm(&ai_addr, true, -1, -1, true, &t, true);
+    /*std::string s, p;
     CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
     cout << s << endl;
     sfsm.socket_.getHostPortStrings(s, p);
-    cout << s << ":" << p << endl;
+    cout << s << ":" << p << endl;*/
 
     sfsm.processSignal(CSocketFsm::sig_empty);
 
     closelog();
-
-    method_ptr<A>::FunctionsTable ft = {&A::getS};
-    method_ptr<A>::Function f = method_ptr<A>::getFunction(ft, 0);
-    A a;
-    cout << (a.*f)() << endl;
-
-
     return 0;
 }

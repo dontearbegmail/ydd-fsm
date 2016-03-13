@@ -101,9 +101,13 @@ namespace ydd
 		    this->state_ = newState;
 		    scb = CSocketFsm::TFSMHelper<TFSM>::getCallback(statesCallbacks, newState);
 		    if(scb == NULL)
+		    {
 			msyslog(LOG_WARNING, "Got NULL as the callback function for the new state %d", newState);
+		    }
 		    else
+		    {
 			(tfsm->*scb)(); // can change this->setSelfSignal_ to true
+		    }
 		    if(this->setSelfSignal_)
 			sig = this->selfSignal_;
 		} while(this->setSelfSignal_);
