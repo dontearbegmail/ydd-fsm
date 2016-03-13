@@ -14,9 +14,20 @@ namespace ydd
 	    throw std::invalid_argument("table.size() != CServerSocketFsm::NUM_STATES");
     }
 
+    CServerSocketFsm::~CServerSocketFsm()
+    {
+	for(ClientsMap::iterator it = this->clients_.begin(); it != this->clients_.end(); it++)
+	{
+	    if(it->second != NULL)
+	    {
+		delete it->second;
+		it->second = NULL;
+	    }
+	}
+    }
+
     void CServerSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
-	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks t;
 	this->processSignalT<CServerSocketFsm>(this, CServerSocketFsm::statesCallbacks_, signal);
     }
 

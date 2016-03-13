@@ -5,6 +5,7 @@
 #include "cclientsocketfsm.h"
 #include <vector>
 #include <string>
+#include <map>
 
 namespace ydd
 {
@@ -26,12 +27,13 @@ namespace ydd
 
 	    CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
+	    ~CServerSocketFsm();
 	    void processSignal(CSocketFsm::Signals signal);
 	private:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
-	    std::vector<CClientSocketFsm> clients_;
-
+	    typedef std::map<int, CClientSocketFsm*> ClientsMap;
+	    CServerSocketFsm::ClientsMap clients_;
 
 	    void q_Bind();
 	    void q_SetListening();
