@@ -34,11 +34,12 @@ namespace ydd
 	    static const int s = 1;
 	    method_ptr<A>::FunctionsTable ft;
 
-	    template<class T> void asd(typename method_ptr<T>::FunctionsTable f)
+	    template<class T> void asd(typename method_ptr<T>::FunctionsTable& f)
 	    {
 	    }
 	    virtual int getS()
 	    {
+		asd<A>(ft);
 		return A::s;
 	    }
 	    A()

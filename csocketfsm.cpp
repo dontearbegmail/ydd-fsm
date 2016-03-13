@@ -73,7 +73,7 @@ namespace ydd
 	return true;
     }
 
-    void CSocketFsm::processSignal(CSocketFsm::Signals signal)
+    /*void CSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
 	CSocketFsm::StateType newState;
 	//CSocketFsm::StateCallback scb = NULL;
@@ -91,19 +91,19 @@ namespace ydd
 		return;
 	    }
 	    this->state_ = newState;
-	    /*scb = this->getCallback(newState);
+	    scb = this->getCallback(newState);
 	    if(scb == NULL)
 		msyslog(LOG_WARNING, "Got NULL as the callback function for the new state %d", newState);
 	    else
 		;
-		//(*scb)(); // can change this->setSelfSignal_ to true*/
+		//(*scb)(); // can change this->setSelfSignal_ to true
 	    if(this->setSelfSignal_)
 		sig = this->selfSignal_;
 	} while(this->setSelfSignal_);
-    }
+    }*/
 
-    template<class TFSM> void CSocketFsm::processSignalT(
-	    TFSM tfsm,
+/*    template<class TFSM> void CSocketFsm::processSignalT(
+	    TFSM& tfsm,
 	    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,
 	    CSocketFsm::Signals signal)
     {
@@ -131,7 +131,7 @@ namespace ydd
 	    if(this->setSelfSignal_)
 		sig = this->selfSignal_;
 	} while(this->setSelfSignal_);
-    }
+    }*/
 
     void CSocketFsm::setSelfSignal(CSocketFsm::Signals signal)
     {

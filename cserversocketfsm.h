@@ -10,9 +10,7 @@ namespace ydd
 {
     class CServerSocketFsm : public CSocketFsm
     {
-	private:
 	public:
-	    std::vector<CClientSocketFsm> clients_;
 	    enum States : StateType
 	    {
 		q_none = CSocketFsm::q_none,
@@ -28,9 +26,12 @@ namespace ydd
 
 	    CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
-	    static const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
 	private:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
+	    static const CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
+	    std::vector<CClientSocketFsm> clients_;
+
+	    void processSignal(CSocketFsm::Signals signal);
 
 	    void q_Bind();
 	    void q_SetListening();

@@ -26,13 +26,13 @@ namespace ydd
 		    StateCallback callback = NULL;
 		    try 
 		    {
-			callback = table->at(state);
+			callback = table.at(state);
 		    }
 		    catch(std::out_of_range& oor)
 		    {
 			callback = NULL;
 			msyslog(LOG_ERR, "The state #%d is out of range of this->statesCallbacks_ (size = %d)", 
-				state, table->size());
+				state, table.size());
 		    }
 		    return callback;
 		}
@@ -79,11 +79,36 @@ namespace ydd
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
 	    StateType getState();
-	    void processSignal(CSocketFsm::Signals signal);
+	    //void processSignal(CSocketFsm::Signals signal);
 	    template<class TFSM> void processSignalT(
-		    TFSM tfsm,
+		    TFSM* tfsm,
 		    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,
-		    CSocketFsm::Signals signal);
+		    CSocketFsm::Signals signal)
+	    {
+		CSocketFsm::StateType newState;
+		typename CSocketFsm::TFSMHelper<TFSM>::StateCallback scb = NULL;
+		bool newOk; 
+		CSocketFsm::Signals sig = signal;
+
+		do
+		{
+		    this->setSelfSignal_ = false;
+		    newOk = this->getNewState(sig, newState);
+		    if(!newOk)
+		    {
+			msyslog(LOG_ERR, "Failed to get the new state. See log above. The state remains unchanged.");
+			return;
+		    }
+		    this->state_ = newState;
+		    scb = CSocketFsm::TFSMHelper<TFSM>::getCallback(statesCallbacks, newState);
+		    if(scb == NULL)
+			msyslog(LOG_WARNING, "Got NULL as the callback function for the new state %d", newState);
+		    else
+			(tfsm->*scb)(); // can change this->setSelfSignal_ to true
+		    if(this->setSelfSignal_)
+			sig = this->selfSignal_;
+		} while(this->setSelfSignal_);
+	    }
     };
 }
 

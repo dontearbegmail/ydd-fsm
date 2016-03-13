@@ -14,26 +14,32 @@ namespace ydd
 	    throw std::invalid_argument("table.size() != CServerSocketFsm::NUM_STATES");
     }
 
+    void CServerSocketFsm::processSignal(CSocketFsm::Signals signal)
+    {
+	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks t;
+	this->processSignalT<CServerSocketFsm>(this, t, signal);
+    }
+
     void CServerSocketFsm::q_Bind()
     {
 	if(this->socket_.bind() != 0)
-	    this->processSignal(sig_err);
+	    this->setSelfSignal(sig_err);
 	else
-	    this->processSignal(sig_noerr);
+	    this->setSelfSignal(sig_noerr);
     }
 
     void CServerSocketFsm::q_SetListening()
     {
 	if(this->socket_.setListening() != 0)
-	    this->processSignal(sig_err);
+	    this->setSelfSignal(sig_err);
 	else
-	    this->processSignal(sig_noerr);
+	    this->setSelfSignal(sig_noerr);
     }
 
     void CServerSocketFsm::q_WaitIncomings()
     {
 	if(this->socket_.setEpollMode(CSocket::emEpollin) != 0)
-	    this->processSignal(sig_err);
+	    this->setSelfSignal(sig_err);
     }
 
     void CServerSocketFsm::q_ProcessIncomings()
@@ -57,7 +63,7 @@ namespace ydd
 	    else {
 		CClientSocketFsm newclient(&in_addr, true, infd, this->socket_.getEpollFd(), 
 			this->socket_.getUseEpollet(), NULL, false);
-		newclient.processSignal(sig_empty);
+		// FIXME newclient.processSignal(sig_empty);
 	    }
 	}
 	/*
@@ -119,12 +125,4 @@ namespace ydd
 
 	return table;
     }
-
-    /*CSocketFsm::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()
-    {
-	CSocketFsm::StatesCallbacks t(CServerSocketFsm::NUM_STATES, NULL);
-	t[q_makeNonBlocking] = &CServerSocketFsm::q_MakeNonBlocking;
-	//t[q_bind] = &CServerSocketFsm::q_Bind;
-	return t;
-    }*/
 }
