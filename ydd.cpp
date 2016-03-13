@@ -12,22 +12,44 @@ using ydd::CServerSocketFsm;
 
 namespace ydd
 {
+    template <class T> struct method_ptr
+    {
+	typedef int (T::*Function)();
+	typedef std::vector<Function> FunctionsTable;
+
+	static Function getFunction(FunctionsTable& t, CSocketFsm::StateType state)
+	{
+	    Function f = NULL;
+
+	    f = t.at(state);
+
+	    return f;
+	}
+
+    };
+
 
     class A {
 	public:
-	static const int s = 1;
-	virtual int getS();
-	A();
+	    static const int s = 1;
+	    method_ptr<A>::FunctionsTable ft;
+
+	    template<class T> void asd(typename method_ptr<T>::FunctionsTable f)
+	    {
+	    }
+	    virtual int getS()
+	    {
+		return A::s;
+	    }
+	    A()
+	    {
+		cout << "A->getS() " << this->getS() << endl;
+	    }
+
     };
 
-    int A::getS()
-    {
-	return A::s;
-    }
-    A::A()
-    {
-	cout << "A->getS() " << this->getS() << endl;
-    }
+
+
 
     class B : public A 
     {
@@ -42,6 +64,7 @@ namespace ydd
 	    cout << "B->getS() " << this->getS() << endl;
 	}
     };
+
 
 }
 
@@ -80,8 +103,13 @@ int main(int argc, char *argv[])
     //CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
 
     cout << s << endl;
-    
+
     closelog();
+
+    method_ptr<A>::FunctionsTable ft = {&A::getS};
+    method_ptr<A>::Function f = method_ptr<A>::getFunction(ft, 0);
+    A a;
+    cout << (a.*f)() << endl;
 
 
     return 0;

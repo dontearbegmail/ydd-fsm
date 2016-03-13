@@ -102,4 +102,12 @@ namespace ydd
 	}
     }*/
     }
+
+    /*CSocketFsm::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()
+    {
+	CSocketFsm::StatesCallbacks t(CServerSocketFsm::NUM_STATES, NULL);
+	t[q_makeNonBlocking] = &CServerSocketFsm::q_MakeNonBlocking;
+	//t[q_bind] = &CServerSocketFsm::q_Bind;
+	return t;
+    }*/
 }

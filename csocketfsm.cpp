@@ -31,7 +31,7 @@ namespace ydd
 	}
 	this->selfSignal_ = CSocketFsm::sig_empty;
 	this->setSelfSignal_ = false;
-	this->statesCallbacks_ = NULL;
+	//this->statesCallbacks_ = NULL;
     }
 
     CSocketFsm::~CSocketFsm()
@@ -40,7 +40,7 @@ namespace ydd
 	    delete this->table_;
     }
 
-    CSocketFsm::StateCallback CSocketFsm::getCallback(CSocketFsm::StateType state)
+    /*CSocketFsm::StateCallback CSocketFsm::getCallback(CSocketFsm::StateType state)
     {
 	CSocketFsm::StateCallback sig_callback = NULL;
 	if(this->statesCallbacks_ == NULL)
@@ -51,11 +51,12 @@ namespace ydd
 	}
 	catch(std::out_of_range& oor)
 	{
+	    sig_callback = NULL;
 	    msyslog(LOG_ERR, "The state #%d is out of range of this->statesCallbacks_ (size = %d)", 
 		    state, this->statesCallbacks_->size());
 	}
 	return sig_callback;
-    }
+    }*/
 	    
     bool CSocketFsm::getNewState(CSocketFsm::Signals signal, CSocketFsm::StateType& newState)
     {
@@ -75,7 +76,7 @@ namespace ydd
     void CSocketFsm::processSignal(CSocketFsm::Signals signal)
     {
 	CSocketFsm::StateType newState;
-	CSocketFsm::StateCallback scb = NULL;
+	//CSocketFsm::StateCallback scb = NULL;
 	bool newOk; 
 	CSocketFsm::Signals sig = signal;
 
@@ -90,11 +91,12 @@ namespace ydd
 		return;
 	    }
 	    this->state_ = newState;
-	    scb = this->getCallback(newState);
+	    /*scb = this->getCallback(newState);
 	    if(scb == NULL)
 		msyslog(LOG_WARNING, "Got NULL as the callback function for the new state %d", newState);
 	    else
-		(*scb)();
+		;
+		//(*scb)(); // can change this->setSelfSignal_ to true*/
 	    if(this->setSelfSignal_)
 		sig = this->selfSignal_;
 	} while(this->setSelfSignal_);
@@ -126,4 +128,5 @@ namespace ydd
     {
 	this->socket_.shutdown();
     }
+
 }
