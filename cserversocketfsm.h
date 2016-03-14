@@ -2,9 +2,7 @@
 #define CSERVERSOCKETFSM_H
 
 #include "csocketfsm.h"
-#include "cclientsocketfsm.h"
-#include <vector>
-#include <string>
+#include "cserveracceptedfsm.h"
 #include <map>
 
 namespace ydd
@@ -29,11 +27,15 @@ namespace ydd
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CServerSocketFsm();
 	    void processSignal(CSocketFsm::Signals signal);
-	private:
-	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
+	protected:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
-	    typedef std::map<int, CClientSocketFsm*> ClientsMap;
+	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
+
+	    typedef std::map<int, CServerAcceptedFsm*> ClientsMap;
 	    CServerSocketFsm::ClientsMap clients_;
+
+	    static CSocketFsm::StateTable clientStateTable_;
+	    static CSocketFsm::StateTable getClientsStateTable();
 
 	    void q_Bind();
 	    void q_SetListening();

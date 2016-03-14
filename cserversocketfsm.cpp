@@ -5,6 +5,7 @@ namespace ydd
 {
     CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks 
 	CServerSocketFsm::statesCallbacks_ = CServerSocketFsm::getStatesCallbacksT();
+    CSocketFsm::StateTable CServerSocketFsm::clientStateTable_ = CServerSocketFsm::getClientsStateTable();
 
     CServerSocketFsm::CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
 	    int epollfd, bool useEpollet, StateTable* table, bool copyTable)
@@ -74,15 +75,15 @@ namespace ydd
 		noErrors = false;
 	    }
 	    else {
-		// FIXME: create clients states table and replace NULL with it
-		CClientSocketFsm* newclient = new CClientSocketFsm(&in_addr, true, infd, 
-			this->socket_.getEpollFd(), this->socket_.getUseEpollet(), NULL, false);
+		CServerAcceptedFsm* newclient = new CServerAcceptedFsm(&in_addr, true, infd, 
+			this->socket_.getEpollFd(), this->socket_.getUseEpollet(), 
+			&CServerSocketFsm::clientStateTable_, false);
 		std::pair<ClientsMap::iterator, bool> ret;
-		ret = this->clients_.insert(std::pair<int, CClientSocketFsm*>(infd, newclient));
+		ret = this->clients_.insert(std::pair<int, CServerAcceptedFsm*>(infd, newclient));
 		if(ret.second == false)
 		{
 		    msyslog(LOG_DEBUG, "A newly accepted connection sockfd = %d is already present "
-			    "in this->clients_. Will delete existing CClientSocketFsm data for it "
+			    "in this->clients_. Will delete existing CServerAcceptedFsm data for it "
 			    "and create new one", infd);
 		    if(ret.first->second != NULL)
 			delete ret.first->second;
@@ -112,5 +113,12 @@ namespace ydd
 	table[q_processIncomings] = &CServerSocketFsm::q_ProcessIncomings;
 
 	return table;
+    }
+
+    CSocketFsm::StateTable CServerSocketFsm::getClientsStateTable()
+    {
+	CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerAcceptedFsm::q_none);
+	CSocketFsm::StateTable t(CServerAcceptedFsm::NUM_STATES, e);
+	return t;
     }
 }

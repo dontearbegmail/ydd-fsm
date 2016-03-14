@@ -78,7 +78,6 @@ namespace ydd
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
 	    StateType getState();
-	    //void processSignal(CSocketFsm::Signals signal);
 	    template<class TFSM> void processSignalT(
 		    TFSM* tfsm,
 		    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,
