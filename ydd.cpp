@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <sys/epoll.h>
 
 using namespace ydd;
 using namespace std;
@@ -71,6 +72,7 @@ namespace ydd
 
 int main(int argc, char *argv[])
 {
+    int efd;
     openlog("ydd-client", LOG_PID, LOG_USER);
 
     CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerSocketFsm::q_none);
@@ -100,14 +102,37 @@ int main(int argc, char *argv[])
     if(CSocket::getAddrinfo("192.168.1.84", "11437", ai_addr) != 0)
 	return -1;
 
-    CServerSocketFsm sfsm(&ai_addr, true, -1, -1, true, &t, true);
-    /*std::string s, p;
+    efd = epoll_create1(0);
+    if(efd == -1)
+    {
+	msyslog(LOG_ERR, "Failed epoll_create1");
+	return -1;
+    }
+
+    CServerSocketFsm sfsm(&ai_addr, true, -1, efd, true, &t, true);
+    std::string s, p;
     CSocket::getIpString(*sfsm.socket_.ai_addr_, s);
     cout << s << endl;
     sfsm.socket_.getHostPortStrings(s, p);
-    cout << s << ":" << p << endl;*/
+    cout << s << ":" << p << endl;
 
     sfsm.processSignal(CSocketFsm::sig_empty);
+    int maxevents = 10;
+    struct epoll_event events[maxevents];
+    while(1)
+    {
+	int n = epoll_pwait(efd, events, maxevents, -1, NULL);
+	int i;
+	for(i = 0; i < n; i++)
+	{
+	    CSocketFsm* fsm;
+	    if((events[i].events & EPOLLERR) || (events[i].events & EPOLLHUP)) {
+		msyslog(LOG_ERR, "epoll error on socket %d", events[i].data.fd);
+		close(events[i].data.fd);
+		continue;
+	    }
+	}
+    }
 
     closelog();
     return 0;

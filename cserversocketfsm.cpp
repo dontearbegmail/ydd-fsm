@@ -89,7 +89,7 @@ namespace ydd
 			delete ret.first->second;
 		    ret.first->second = newclient;
 		}
-		// FIXME newclient.processSignal(sig_empty);
+		newclient->processSignal(sig_empty);
 		msyslog(LOG_DEBUG, "Successfully added incoming sockfd %d into this->clients_ "
 			"storage", infd);
 	    }
@@ -119,6 +119,27 @@ namespace ydd
     {
 	CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerAcceptedFsm::q_none);
 	CSocketFsm::StateTable t(CServerAcceptedFsm::NUM_STATES, e);
+
+	for(CSocketFsm::StateType i = CServerAcceptedFsm::q_none; i < CServerAcceptedFsm::q_shutdown; i++)
+	    t[i][sig_err] = CServerAcceptedFsm::q_error;
+
+	t[CServerAcceptedFsm::q_none][CSocketFsm::sig_empty] = CServerAcceptedFsm::q_makeNonBlocking;
+
+	t[CServerAcceptedFsm::q_makeNonBlocking][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_readEpollinPending;
+
+	t[CServerAcceptedFsm::q_readEpollinPending][CSocketFsm::sig_epollin] = CServerAcceptedFsm::q_read;
+
+	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_eagain] = CServerAcceptedFsm::q_readEpollinPending;
+	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_checkClientData;
+	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_connection_closed] = CServerAcceptedFsm::q_connectionClosed;
+
+	t[CServerAcceptedFsm::q_checkClientData][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_write;
+
+	t[CServerAcceptedFsm::q_write][CSocketFsm::sig_eagain] = CServerAcceptedFsm::q_writeEpolloutPending;
+	t[CServerAcceptedFsm::q_write][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_shutdown;
+
+	t[CServerAcceptedFsm::q_writeEpolloutPending][CSocketFsm::sig_epollout] = CServerAcceptedFsm::q_write;
+
 	return t;
     }
 }

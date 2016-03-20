@@ -45,9 +45,11 @@ namespace ydd
 		sig_einprogress,
 		sig_epollin,
 		sig_epollout,
+		sig_eagain,
+		sig_connection_closed,
 		sig_empty
 	    };
-	    const static size_t NUM_SIGNALS = 6;
+	    const static size_t NUM_SIGNALS = 7;
 
 	    typedef std::vector<StateType> StateLine;
 	    typedef std::vector<CSocketFsm::StateLine> StateTable;
@@ -63,21 +65,25 @@ namespace ydd
 	    bool setSelfSignal_;
 	    void setSelfSignal(CSocketFsm::Signals signal);
 	    
-	    //typedef void (CSocketFsm::*StateCallback)();
-	    //typedef std::vector<StateCallback> StatesCallbacks;
-	    //CSocketFsm::StatesCallbacks* statesCallbacks_;
-	    //CSocketFsm::StateCallback getCallback(CSocketFsm::StateType state);
 	    bool getNewState(CSocketFsm::Signals signal, CSocketFsm::StateType& newState);
 
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
 	    void q_Shutdown();
+	    void q_ConnectPending();
+	    void q_Connect();
+	    void q_ConnectCheck();
+
+	    std::vector<std::string> readData;
+	    void q_Read();
+	    void q_ReadEpollinPending();
 
 	public:
 	    CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CSocketFsm();
 	    StateType getState();
+	    int sockfd();
 	    template<class TFSM> void processSignalT(
 		    TFSM* tfsm,
 		    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,

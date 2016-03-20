@@ -14,6 +14,8 @@ namespace ydd {
     {
 	public:
 	    enum EpollMode {emNone, emEpollin, emEpollout, emEpollinEpollout};
+	    enum ReadStates {rsConnectionClosed, rsGotEagain, rsGotError, rsKeepReading};
+	    const static size_t ReadChunkSize = 4096;
 	private: 
 	    int sockfd_;
 	    int epollfd_;
@@ -26,6 +28,7 @@ namespace ydd {
 	    struct sockaddr* ai_addr_;
 	    CSocket(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, int epollfd, bool useEpollet);
 	    ~CSocket();
+	    int sockfd();
 	    static int getAddrinfo(const char* host, const char* port, struct sockaddr& ai_addr);
 	    static int getIpString(struct sockaddr& ai_addr, std::string& s);
 	    int getHostPortStrings(std::string& host, std::string& port);
@@ -40,6 +43,7 @@ namespace ydd {
 	    int accept(struct sockaddr& in_addr);
 	    int getEpollFd();
 	    bool getUseEpollet();
+	    CSocket::ReadStates read(std::vector<std::string>& readData);
     };
 }
 

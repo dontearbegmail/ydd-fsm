@@ -37,6 +37,11 @@ namespace ydd
 	this->shutdown();
     }
 
+    int CSocket::sockfd()
+    {
+	return this->sockfd_;
+    }
+
     int CSocket::getAddrinfo(const char* host, const char* port, struct sockaddr& ai_addr)
     {
 	if(host == NULL)
@@ -309,5 +314,46 @@ namespace ydd
     bool CSocket::getUseEpollet()
     {
 	return this->useEpollet_;
+    }
+
+    CSocket::ReadStates CSocket::read(std::vector<std::string>& strVector)
+    {
+	ssize_t count;
+	char buf[CSocket::ReadChunkSize];
+	CSocket::ReadStates state = CSocket::rsKeepReading;
+	int e;
+	std::string schunk;
+
+	do
+	{
+	    count = ::read(this->sockfd_, buf, CSocket::ReadChunkSize);
+	    e = errno;
+	    if(count == -1)
+	    {
+		/* If errno == EAGAIN, that means we have read all data available in the socket by now and have to return */
+		if(e == EAGAIN || e == EWOULDBLOCK) 
+		{
+		    state = CSocket::rsGotEagain;
+		}
+		else 
+		{
+		    log_errno(e);
+		    state = CSocket::rsGotError;
+		}
+	    }
+	    /* End of file. The remote has closed the connection */
+	    else if(count == 0)
+	    {
+		state = CSocket::rsConnectionClosed;
+	    }
+	    else
+	    {
+		schunk.assign(buf, count);
+		strVector.push_back(schunk);
+	    }
+		
+	} while(state == CSocket::rsKeepReading);
+
+	return state;
     }
 }

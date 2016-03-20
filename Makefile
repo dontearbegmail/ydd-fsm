@@ -1,6 +1,6 @@
 .PHONY: all clean
 CPPFLAGS = -g -Wall -std=c++0x -D_GNU_SOURCE
-SRCS = general.cpp csocket.cpp csocketfsm.cpp cserveracceptedfsm.cpp cserversocketfsm.cpp cbaseclientfsm.cpp
+SRCS = general.cpp csocket.cpp csocketfsm.cpp cserveracceptedfsm.cpp cserversocketfsm.cpp 
 OBJS = $(SRCS:.cpp=.o)
 
 all: ydd 

@@ -40,6 +40,11 @@ namespace ydd
 	    delete this->table_;
     }
 
+    int CSocketFsm::sockfd()
+    {
+	return this->socket_.sockfd();
+    }
+
     /*CSocketFsm::StateCallback CSocketFsm::getCallback(CSocketFsm::StateType state)
     {
 	CSocketFsm::StateCallback sig_callback = NULL;
@@ -100,4 +105,58 @@ namespace ydd
 	this->socket_.shutdown();
     }
 
+    void CSocketFsm::q_ConnectPending()
+    {
+	if(this->socket_.setEpollMode(CSocket::emEpollout) != 0)
+	    this->setSelfSignal(CSocketFsm::sig_err);
+    }
+
+    void CSocketFsm::q_Connect()
+    {
+	bool gotEInProgress = false;
+	if(this->socket_.connect(gotEInProgress) == -1)
+	{
+	    this->setSelfSignal(CSocketFsm::sig_err);
+	}
+	else
+	{
+	    if(gotEInProgress)
+		this->setSelfSignal(CSocketFsm::sig_einprogress);
+	    else
+		this->setSelfSignal(CSocketFsm::sig_noerr);
+	}
+    }
+
+    void CSocketFsm::q_ConnectCheck()
+    {
+	int soError;
+	if(this->socket_.getSoError(soError) == -1)
+	{
+	    this->setSelfSignal(CSocketFsm::sig_err);
+	}
+	else
+	{
+	    if(soError == 0)
+		this->setSelfSignal(CSocketFsm::sig_noerr);
+	    else
+		this->setSelfSignal(CSocketFsm::sig_err);
+	}
+    }
+
+    void CSocketFsm::q_ReadEpollinPending()
+    {
+	if(this->socket_.setEpollMode(CSocket::emEpollin) != 0)
+	    this->setSelfSignal(sig_err);
+    }
+
+    void CSocketFsm::q_Read()
+    {
+	CSocket::ReadStates state = this->socket_.read(this->readData);
+	if(state == CSocket::rsConnectionClosed)
+	    this->setSelfSignal(sig_connection_closed);
+	else if(state == CSocket::rsGotEagain)
+	    this->setSelfSignal(sig_eagain);
+	else
+	    this->setSelfSignal(sig_err);
+    }
 }
