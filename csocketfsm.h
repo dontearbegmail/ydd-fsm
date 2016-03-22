@@ -70,7 +70,6 @@ namespace ydd
 
 	    void doShutdown();
 	    void q_Shutdown();
-	    void q_Error();
 
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
@@ -88,6 +87,7 @@ namespace ydd
 	    ~CSocketFsm();
 	    StateType getState();
 	    int sockfd();
+	    std::vector<std::string>& getReadData();
 	    template<class TFSM> void processSignalT(
 		    TFSM* tfsm,
 		    typename CSocketFsm::TFSMHelper<TFSM>::StatesCallbacks& statesCallbacks,

@@ -164,10 +164,7 @@ namespace ydd
 	t[CServerAcceptedFsm::q_readEpollinPending][CSocketFsm::sig_epollin] = CServerAcceptedFsm::q_read;
 
 	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_eagain] = CServerAcceptedFsm::q_readEpollinPending;
-	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_checkClientData;
 	t[CServerAcceptedFsm::q_read][CSocketFsm::sig_connection_closed] = CServerAcceptedFsm::q_connectionClosed;
-
-	t[CServerAcceptedFsm::q_checkClientData][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_write;
 
 	t[CServerAcceptedFsm::q_write][CSocketFsm::sig_eagain] = CServerAcceptedFsm::q_writeEpolloutPending;
 	t[CServerAcceptedFsm::q_write][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_shutdown;

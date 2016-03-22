@@ -93,12 +93,6 @@ namespace ydd
 	this->doShutdown();
     }
 
-    void CSocketFsm::q_Error()
-    {
-	msyslog(LOG_ERR, "CSocketFsm ended in q_error state");
-	this->doShutdown();
-    }
-
     void CSocketFsm::q_ConnectPending()
     {
 	if(this->socket_.setEpollMode(CSocket::emEpollout) != 0)
@@ -154,5 +148,9 @@ namespace ydd
 	    this->setSelfSignal(sig_err);
     }
 
+    std::vector<std::string>& CSocketFsm::getReadData()
+    {
+	return this->readData;
+    }
 
 }

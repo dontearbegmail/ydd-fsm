@@ -31,4 +31,9 @@ namespace ydd
     {
 	this->processSignalT<CServerAcceptedFsm>(this, CServerAcceptedFsm::statesCallbacks_, signal);
     }
+
+    void CServerAcceptedFsm::q_ConnectionClosed()
+    {
+	this->socket_.shutdown();
+    }
 }

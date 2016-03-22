@@ -60,10 +60,44 @@ int main(int argc, char *argv[])
 	    {
 		sfsm.processSignal(CSocketFsm::sig_epollin);
 	    }
+	    else if(events[i].events & EPOLLIN)
+	    {
+		CServerAcceptedFsm* client = sfsm.getClientBySockfd(events[i].data.fd);
+		if(client == NULL)
+		{
+		    msyslog(LOG_WARNING, "Received EPOLLIN for sockfd = %d, but it's not in "
+			    "sfsm clients", events[i].data.fd);
+		    continue;
+		}
+		client->processSignal(CSocketFsm::sig_epollin);
+		CSocketFsm::StateType clientState = client->getState();
+		if(clientState == CServerAcceptedFsm::q_error || 
+			clientState == CServerAcceptedFsm::q_connectionClosed)
+		{
+		    /* Temporary solution */
+		    std::vector<std::string> clientData(client->getReadData());
+		    std::vector<std::string>::iterator it;
+		    cout << endl << "The whole data read from socket " << 
+			events[i].data.fd << ":" << endl;
+		    for(it = clientData.begin(); it != clientData.end(); it++)
+			cout << *it;
+		    /* END Temporary solution */
+		    sfsm.shutdownClient(events[i].data.fd);
+		}
+		else
+		{
+		    cout << endl << "Have read the following data chunk from "
+			"socket " << events[i].data.fd << ": " << 
+			client->getReadData().back();
+		}
+	    }
 	}
 	if(sfsm.getState() != CServerSocketFsm::q_waitIncomings)
 	    appState = listeningSockErr;
     }
+
+    if(appState == listeningSockErr)
+	msyslog(LOG_ERR, "Got an error on listening socket. Will shutdown");
 
     closelog();
     return 0;

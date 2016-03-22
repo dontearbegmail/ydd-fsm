@@ -11,15 +11,14 @@ namespace ydd
 	    enum States : StateType
 	    {
 		q_initial = 0,
+		q_shutdown = CSocketFsm::q_shutdown,
 		q_makeNonBlocking,
 		q_readEpollinPending,
 		q_read,
-		q_checkClientData,
 		q_write,
 		q_writeEpolloutPending,
-		q_error,
 		q_connectionClosed,
-		q_shutdown
+		q_error
 	    };
 	    static const size_t NUM_STATES = 10;
 
