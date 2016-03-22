@@ -100,6 +100,25 @@ namespace ydd
 	    this->setSelfSignal(sig_noerr);
     }
 
+    CServerAcceptedFsm* CServerSocketFsm::getClientBySockfd(int sockfd)
+    {
+	CServerAcceptedFsm* client = NULL;
+	try
+	{
+	    client = clients_.at(sockfd);
+	}
+	catch(std::out_of_range& oor)
+	{
+	    msyslog(LOG_ERR, "Requested client socket %d which is not present in "
+		    "CServerSocketFsm::clients_ storage", sockfd);
+	}
+	return client;
+    }
+
+    void CServerSocketFsm::shutdownClient(int sockfd)
+    {
+    }
+
     CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()
     {
 	CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks table(
@@ -117,13 +136,13 @@ namespace ydd
 
     CSocketFsm::StateTable CServerSocketFsm::getClientsStateTable()
     {
-	CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerAcceptedFsm::q_none);
+	CSocketFsm::StateLine e(CSocketFsm::NUM_SIGNALS, CServerAcceptedFsm::q_shutdown);
 	CSocketFsm::StateTable t(CServerAcceptedFsm::NUM_STATES, e);
 
-	for(CSocketFsm::StateType i = CServerAcceptedFsm::q_none; i < CServerAcceptedFsm::q_shutdown; i++)
+	for(CSocketFsm::StateType i = CServerAcceptedFsm::q_initial; i < CServerAcceptedFsm::q_shutdown; i++)
 	    t[i][sig_err] = CServerAcceptedFsm::q_error;
 
-	t[CServerAcceptedFsm::q_none][CSocketFsm::sig_empty] = CServerAcceptedFsm::q_makeNonBlocking;
+	t[CServerAcceptedFsm::q_initial][CSocketFsm::sig_empty] = CServerAcceptedFsm::q_makeNonBlocking;
 
 	t[CServerAcceptedFsm::q_makeNonBlocking][CSocketFsm::sig_noerr] = CServerAcceptedFsm::q_readEpollinPending;
 

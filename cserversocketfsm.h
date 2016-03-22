@@ -19,14 +19,17 @@ namespace ydd
 		q_makeNonBlocking,
 		q_setListening,
 		q_waitIncomings,
-		q_processIncomings
+		q_processIncomings,
+		q_error
 	    };
-	    static const size_t NUM_STATES = 8;
+	    static const size_t NUM_STATES = 9;
 
 	    CServerSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd, 
 		    int epollfd, bool useEpollet, StateTable* table, bool copyTable);
 	    ~CServerSocketFsm();
 	    void processSignal(CSocketFsm::Signals signal);
+	    CServerAcceptedFsm* getClientBySockfd(int sockfd);
+	    void shutdownClient(int sockfd);
 	protected:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();

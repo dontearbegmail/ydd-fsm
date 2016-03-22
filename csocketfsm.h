@@ -47,9 +47,10 @@ namespace ydd
 		sig_epollout,
 		sig_eagain,
 		sig_connection_closed,
-		sig_empty
+		sig_empty,
+		sig_shutdown
 	    };
-	    const static size_t NUM_SIGNALS = 7;
+	    const static size_t NUM_SIGNALS = 9;
 
 	    typedef std::vector<StateType> StateLine;
 	    typedef std::vector<CSocketFsm::StateLine> StateTable;

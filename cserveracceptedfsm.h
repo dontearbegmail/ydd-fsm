@@ -10,7 +10,7 @@ namespace ydd
 	public:
 	    enum States : StateType
 	    {
-		q_none = 0,
+		q_initial = 0,
 		q_makeNonBlocking,
 		q_readEpollinPending,
 		q_read,
