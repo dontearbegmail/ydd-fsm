@@ -3,9 +3,6 @@
 
 namespace ydd 
 {
-    /*const CSocketFsm::StateType CSocketFsm::q_none = 0;
-    const CSocketFsm::StateType CSocketFsm::q_shutdown = 1;*/
-
     CSocketFsm::CSocketFsm(struct sockaddr* ai_addr, bool copyAiAddr, int sockfd,
 	    int epollfd, bool useEpollet, StateTable* table, bool copyTable) 
 	: socket_(ai_addr, copyAiAddr, sockfd, epollfd, useEpollet)
@@ -18,7 +15,7 @@ namespace ydd
 	    isSizeCorrect = i->size() == CSocketFsm::NUM_SIGNALS;
 	if(!isSizeCorrect)
 	    throw std::invalid_argument("One of table::StateLine size != CSocketFsm::NUM_SIGNALS");
-	this->state_ = CSocketFsm::q_none;
+	this->state_ = CSocketFsm::q_initial;
 	if(copyTable)
 	{
 	    this->needDeleteTable_ = true;
@@ -86,9 +83,20 @@ namespace ydd
 	    this->setSelfSignal(CSocketFsm::sig_noerr);
     }
 
-    void CSocketFsm::q_Shutdown()
+    void CSocketFsm::doShutdown()
     {
 	this->socket_.shutdown();
+    }
+
+    void CSocketFsm::q_Shutdown()
+    {
+	this->doShutdown();
+    }
+
+    void CSocketFsm::q_Error()
+    {
+	msyslog(LOG_ERR, "CSocketFsm ended in q_error state");
+	this->doShutdown();
     }
 
     void CSocketFsm::q_ConnectPending()

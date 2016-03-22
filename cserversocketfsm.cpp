@@ -21,6 +21,7 @@ namespace ydd
 	{
 	    if(it->second != NULL)
 	    {
+		it->second->processSignal(CSocketFsm::sig_shutdown);
 		delete it->second;
 		it->second = NULL;
 	    }
@@ -115,8 +116,22 @@ namespace ydd
 	return client;
     }
 
-    void CServerSocketFsm::shutdownClient(int sockfd)
+    void CServerSocketFsm::shutdownClient(int sockfd, CSocketFsm::Signals finalSignal)
     {
+	CServerSocketFsm::ClientsMap::iterator it = this->clients_.find(sockfd);
+	if(it == this->clients_.end())
+	{
+	    msyslog(LOG_ERR, "Trying to shutdown client sockfd = %d which isn't "
+		    "present in this->clients_", sockfd);
+	    return;
+	}
+	if(it->second != NULL)
+	{
+	    it->second->processSignal(finalSignal);
+	    delete it->second;
+	    it->second = NULL;
+	}
+	this->clients_.erase(it);
     }
 
     CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks CServerSocketFsm::getStatesCallbacksT()

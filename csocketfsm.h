@@ -13,7 +13,7 @@ namespace ydd
     {
 	public:
 	    typedef short StateType;
-	    static const StateType q_none = 0, q_shutdown = 1;
+	    static const StateType q_initial = 0, q_shutdown = 1;
 	    static const size_t NUM_STATES = 0;
 	    
 	    template<class TFSM> struct TFSMHelper
@@ -68,9 +68,12 @@ namespace ydd
 	    
 	    bool getNewState(CSocketFsm::Signals signal, CSocketFsm::StateType& newState);
 
+	    void doShutdown();
+	    void q_Shutdown();
+	    void q_Error();
+
 	    void q_GetSockFd();
 	    void q_MakeNonBlocking();
-	    void q_Shutdown();
 	    void q_ConnectPending();
 	    void q_Connect();
 	    void q_ConnectCheck();

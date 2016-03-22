@@ -12,7 +12,7 @@ namespace ydd
 	public:
 	    enum States : StateType
 	    {
-		q_none = CSocketFsm::q_none,
+		q_initial = CSocketFsm::q_initial,
 		q_shutdown = CSocketFsm::q_shutdown,
 		q_getSockFd,
 		q_bind,
@@ -29,7 +29,7 @@ namespace ydd
 	    ~CServerSocketFsm();
 	    void processSignal(CSocketFsm::Signals signal);
 	    CServerAcceptedFsm* getClientBySockfd(int sockfd);
-	    void shutdownClient(int sockfd);
+	    void shutdownClient(int sockfd, CSocketFsm::Signals finalSignal = CSocketFsm::sig_shutdown);
 	protected:
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks statesCallbacks_;
 	    static CSocketFsm::TFSMHelper<CServerSocketFsm>::StatesCallbacks getStatesCallbacksT();
